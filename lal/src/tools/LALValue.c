@@ -106,6 +106,11 @@ LALValue * XLALValueSet(LALValue *value, const void *data, size_t size, LALTYPEC
 	case LAL_Z_TYPE_CODE:
 		XLAL_CHECK_NULL(size == sizeof(COMPLEX16), XLAL_ETYPE, "Wrong size for type");
 		break;
+	case LAL_I4_V_S_TYPE_CODE:
+		//sebastian khan: hack for mode array
+		//TODO: figure out how to add an approriate dataype
+		// XLAL_CHECK_NULL(size == ((length) * (vectorLength) * sizeof(INT4)), XLAL_ETYPE, "Wrong size for type");
+		break;
 	default:
                 XLAL_ERROR_NULL(XLAL_ETYPE, "Unsupported LALTYPECODE value 0%o", (unsigned int)type);
 	}
@@ -231,6 +236,15 @@ DEFINE_GET_FUNC(COMPLEX8, LAL_C_TYPE_CODE, XLAL_REAL4_FAIL_NAN)
 DEFINE_GET_FUNC(COMPLEX16, LAL_Z_TYPE_CODE, XLAL_REAL8_FAIL_NAN)
 
 #undef DEFINE_GET_FUNC
+
+/**
+ * Function to lookup a pointer to INT4VectorSequence LAL data type from LALdict.
+ */
+const INT4VectorSequence *XLALValueGetINT4VectorSequence(const LALValue *value)
+{
+	//TODO: add XLAL_CHECK_VAL when I have the correct datatype coded up
+	return (const INT4VectorSequence *)(value->data);
+}
 
 REAL8 XLALValueGetAsREAL8(const LALValue *value)
 {

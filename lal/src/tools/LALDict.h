@@ -88,6 +88,8 @@ int XLALDictInsertREAL8Value(LALDict *dict, const char *key, REAL8 value);
 int XLALDictInsertCOMPLEX8Value(LALDict *dict, const char *key, COMPLEX8 value);
 int XLALDictInsertCOMPLEX16Value(LALDict *dict, const char *key, COMPLEX16 value);
 
+int XLALDictInsertINT4VectorSequence(LALDict *dict, const char *key, INT4VectorSequence *value);
+
 LALDictEntry *XLALDictLookup(LALDict *dict, const char *key);
 /* warning: shallow pointer */
 const char * XLALDictLookupStringValue(LALDict *dict, const char *key);
@@ -103,6 +105,8 @@ REAL4 XLALDictLookupREAL4Value(LALDict *dict, const char *key);
 REAL8 XLALDictLookupREAL8Value(LALDict *dict, const char *key);
 COMPLEX8 XLALDictLookupCOMPLEX8Value(LALDict *dict, const char *key);
 COMPLEX16 XLALDictLookupCOMPLEX16Value(LALDict *dict, const char *key);
+
+const INT4VectorSequence * XLALDictLookupINT4VectorSequence(LALDict *dict, const char *key);
 
 REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key);
 

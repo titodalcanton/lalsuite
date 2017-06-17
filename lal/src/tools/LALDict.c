@@ -367,6 +367,22 @@ DEFINE_INSERT_FUNC(REAL8, LAL_D_TYPE_CODE)
 DEFINE_INSERT_FUNC(COMPLEX8, LAL_C_TYPE_CODE)
 DEFINE_INSERT_FUNC(COMPLEX16, LAL_Z_TYPE_CODE)
 
+
+/**
+ * Function to insert a pointer to INT4VectorSequence LAL data type into LALdict.
+ */
+int XLALDictInsertINT4VectorSequence(LALDict *dict, const char *key, INT4VectorSequence *value)
+{
+    if (value == NULL) {
+		LALFree(value); //FIXME: Is this needed?
+		XLAL_ERROR(XLAL_EFUNC, "Key `%s' is NULL and it should not be", key);
+    }
+    size_t size =  (value->length) * (value->vectorLength) * sizeof( value->data ) ;
+	if (XLALDictInsert(dict, key, value, size, LAL_I4_V_S_TYPE_CODE) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	return 0;
+}
+
 #undef DEFINE_INSERT_FUNC
 
 /* warning: shallow pointer */
@@ -408,6 +424,23 @@ DEFINE_LOOKUP_FUNC(REAL4, XLAL_REAL4_FAIL_NAN)
 DEFINE_LOOKUP_FUNC(REAL8, XLAL_REAL8_FAIL_NAN)
 DEFINE_LOOKUP_FUNC(COMPLEX8, XLAL_REAL4_FAIL_NAN)
 DEFINE_LOOKUP_FUNC(COMPLEX16, XLAL_REAL8_FAIL_NAN)
+
+
+/**
+ * Function to lookup a pointer to INT4VectorSequence LAL data type from LALdict.
+ */
+const INT4VectorSequence * XLALDictLookupINT4VectorSequence(LALDict *dict, const char *key)
+{
+    LALDictEntry *entry;
+    const LALValue *value;
+    entry = XLALDictLookup(dict, key);
+    if (entry == NULL)
+        XLAL_ERROR_NULL(XLAL_ENAME, "Key `%s' not found", key);
+    value = XLALDictEntryGetValue(entry);
+    if (value == NULL)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    return XLALValueGetINT4VectorSequence(value);
+}
 
 REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key)
 {

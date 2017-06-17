@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Evan Ochsner
+/* Copyright (C) 2012 Evan Ochsner, 2017 Sebastian Khan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,17 +23,22 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 #include <lal/LALDict.h>
+#include <lal/SeqFactories.h>
+
 
 /**
  * @addtogroup LALSimInspiral_h
  * @{
  */
 
-/** Default values for all enumerated flags */ 
+/** Default values for all enumerated flags */
 #define LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT LAL_SIM_INSPIRAL_SPIN_ORDER_ALL
 #define LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL
 #define LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
 #define LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED
+
+#define LAL_SIM_INSPIRAL_LMIN 2
+#define LAL_SIM_INSPIRAL_LMAX 8
 
 /**
  * Enumeration of allowed PN orders of spin effects. All effects up to and
@@ -141,5 +146,18 @@ LALSimInspiralModesChoice XLALSimInspiralGetModesChoice(LALSimInspiralWaveformFl
 bool XLALSimInspiralModesChoiceIsDefault(LALSimInspiralModesChoice modesChoice);
 void XLALSimInspiralSetNumrelDataOLD(LALSimInspiralWaveformFlags *waveFlags, const char* numreldata);
 char* XLALSimInspiralGetNumrelDataOLD(LALSimInspiralWaveformFlags *waveFlags);
+
+
+INT4VectorSequence * XLALSimInspiralCreateModeArray(void);
+int XLALSimInspiralModeArrayConvertModeToIndex(int ell, int m);
+int XLALSimInspiralModeArrayConvertMToIndex(int ell, int m);
+int XLALSimInspiralModeArrayConvertIndexToM(int ell, int index);
+int XLALSimInspiralModeArrayLastIndexForL(int ell);
+int XLALSimInspiralModeArrayIsModeActive(INT4VectorSequence *ModeArray, int ell, int m);
+int XLALSimInspiralModeArrayAddAllModesAtL(INT4VectorSequence *ModeArray, int ell);
+int XLALSimInspiralModeArrayRemoveAllModesAtL(INT4VectorSequence *ModeArray, int ell);
+int XLALSimInspiralModeArrayAddMode(INT4VectorSequence *ModeArray, int ell, int m);
+int XLALSimInspiralModeArrayRemoveMode(INT4VectorSequence *ModeArray, int ell, int m);
+int XLALSimInspiralModeArraySetupPresets(INT4VectorSequence *ModeArray, LALSimInspiralModesChoice ModesChoice);
 
 #endif /* _LALSIMINSPIRALWAVEFORMFLAGS_H */

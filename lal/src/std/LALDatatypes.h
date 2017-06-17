@@ -33,6 +33,7 @@ enum {
     LAL_1_BYTE_TYPE_SIZE = 000,  /**< One byte size 00 = 0 */
     LAL_2_BYTE_TYPE_SIZE = 001,  /**< Two byte size 01 = 1 */
     LAL_4_BYTE_TYPE_SIZE = 002,  /**< Four byte size 010 = 2 */
+    LAL_4_BYTE_V_S_TYPE_SIZE = 0020,  /**< FIXME: THIS IS A HACK. Same LAL_4_BYTE_TYPE_SIZE but slightly different so can be used to dishtinguish between this and a VectorSequence used in LALValue.c*/
     LAL_8_BYTE_TYPE_SIZE = 003,  /**< Eight byte size 011 = 3 */
     LAL_16_BYTE_TYPE_SIZE = 004, /**< Sixteen byte size 0100 = 4 */
     LAL_TYPE_SIZE_MASK = 007     /**< Type size mask 0111 = 7 */
@@ -58,7 +59,8 @@ typedef enum tagLALTYPECODE {
     LAL_S_TYPE_CODE = LAL_4_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,       /**< REAL4 type code (18) */
     LAL_D_TYPE_CODE = LAL_8_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,       /**< REAL8 type code (19) */
     LAL_C_TYPE_CODE = LAL_8_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG,         /**< COMPLEX8 type code (27) */
-    LAL_Z_TYPE_CODE = LAL_16_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG         /**< COMPLEX16 type code (28) */
+    LAL_Z_TYPE_CODE = LAL_16_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG,         /**< COMPLEX16 type code (28) */
+    LAL_I4_V_S_TYPE_CODE = LAL_4_BYTE_V_S_TYPE_SIZE /**< INT4 type code used to compare against INT4 Vector Sequence types */
 } LALTYPECODE;
 
 #ifdef  __cplusplus

@@ -77,6 +77,8 @@ REAL8 XLALValueGetREAL8(const LALValue *value);
 COMPLEX8 XLALValueGetCOMPLEX8(const LALValue *value);
 COMPLEX16 XLALValueGetCOMPLEX16(const LALValue *value);
 
+const INT4VectorSequence *XLALValueGetINT4VectorSequence(const LALValue *value);
+
 REAL8 XLALValueGetAsREAL8(const LALValue *value);
 
 void XLALValuePrint(const LALValue *value, int fd);

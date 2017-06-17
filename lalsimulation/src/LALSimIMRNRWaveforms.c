@@ -590,7 +590,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         UNUSED REAL8 s2y,                      /**< initial value of S2y */
         UNUSED REAL8 s2z,                      /**< initial value of S2z */
         UNUSED const char *NRDataFile,         /**< Location of NR HDF file */
-        UNUSED INT4 Lmax                       /**< Maximum ell multipole number used to generated waveform. Default: LAL_SIM_INSPIRAL_MODES_CHOICE_ALL */
+        UNUSED const INT4VectorSequence *ModeArray_IN   /**< Array containing the ell and m modes to generate. To generate all available modes pass NULL */
         )
 {
   #ifndef LAL_HDF5_ENABLED
@@ -777,26 +777,43 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   /* NOTE: We assume that for a given ell mode, all m modes are present */
   INT4 NRLmax;
   XLALH5FileQueryScalarAttributeValue(&NRLmax, file, "Lmax");
+  // printf("NRLmax = %i\n\n", NRLmax);
 
-  if (Lmax == LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
-  {/* Default behaviour: Generate all available modes */
-      Lmax = NRLmax;
-  }
-  else if (Lmax > NRLmax)
-  {/* User has requested more modes than exist in the NR data - Error and exit */
-      XLAL_ERROR(XLAL_EDOM, "User has requested to generated modes upto Lmax = %i but the NR metadata for this waveform says it only has upto Lmax = %i",
-                  Lmax, NRLmax);
-  }
-  else if (Lmax < 2)
-  {/* Only Lmax >= 2 makes sense physically and hence not supported */
-      XLAL_ERROR(XLAL_EDOM, "User has requested Lmax = %i. Only Lmax >= 2 is supported.", Lmax);
-  }
-  /* else use what the user input */
+  /* HACK SK: I couldn't find out how to code the LALDict and LALValue codes to not return ModeArray as a const!? See functions like XLALValueGetINT4VectorSequence in LALValue.c
+  It works when it returns a const so I have to do this little song and dance of have a dummy variable as input. */
+  INT4VectorSequence *ModeArray = NULL;
 
-  for (model=2; model < (Lmax + 1) ; model++)
-  {
-    for (modem=-model; modem < (model+1); modem++)
+  if ( ModeArray_IN == NULL )
+  {/* Default behaviour: Generate all modes upto NRLmax */
+    ModeArray = XLALSimInspiralCreateModeArray();
+    for (int ell=2; ell<=NRLmax; ell++)
     {
+        XLALSimInspiralModeArrayAddAllModesAtL(ModeArray, ell);
+    }
+  }
+  else
+  { /* Use the ModeArray given */
+    ModeArray = XLALSimInspiralCreateModeArray();
+    ModeArray->data = ModeArray_IN->data;
+  }
+
+  /* Get loop variables */
+  int ell_max_index = NRLmax - 1; // Loop over all available L modes in NR file
+  int m_max_index = 0; // initialize
+
+  for (int ell_index=0; ell_index<ell_max_index; ell_index++)
+  {
+    model = ell_index + 2; // convert from ell array index to actual ell.
+    m_max_index = XLALSimInspiralModeArrayLastIndexForL(model); // We ony loop over 2*model + 1 m-modes
+    for (int m_index=0; m_index<m_max_index; m_index++)
+    {
+      modem = XLALSimInspiralModeArrayConvertIndexToM(model, m_index);
+      /* If (model, modem) is not in ModeArray then skip */
+      if (XLALSimInspiralModeArrayIsModeActive(ModeArray, model, modem) != 1) {
+        //   printf("SKIPPING model = %i modem = %i\n", model, modem);
+          continue;
+      }
+    //   printf("generateing model = %i modem = %i\n", model, modem);
       snprintf(amp_key, sizeof(amp_key), "amp_l%d_m%d", model, modem);
       snprintf(phase_key, sizeof(phase_key), "phase_l%d_m%d", model, modem);
 
@@ -860,6 +877,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   XLALDestroyREAL8TimeSeries(hplus_corr);
   XLALDestroyREAL8TimeSeries(hcross_corr);
   XLALH5FileClose(file);
+  LALFree(ModeArray); //Do I need this?
 
   return XLAL_SUCCESS;
   #endif

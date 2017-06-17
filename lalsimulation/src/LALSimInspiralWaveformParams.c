@@ -58,6 +58,14 @@ DEFINE_INSERT_FUNC(NumRelData, String, "numreldata", NULL)
 
 DEFINE_INSERT_FUNC(Lmax, INT4, "Lmax", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
 
+/**
+ * Insert ModeArray of LAL data type INT4VectorSequence into LALDict.
+ */
+int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params, INT4VectorSequence *value)
+{
+	return XLALDictInsertINT4VectorSequence(params, "ModeArray", value);
+}
+
 DEFINE_INSERT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_INSERT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_INSERT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -140,6 +148,18 @@ DEFINE_LOOKUP_FUNC(NumRelData, String, "numreldata", NULL)
 
 DEFINE_LOOKUP_FUNC(Lmax, INT4, "Lmax", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
 
+/**
+ * Lookup ModeArray of LAL data type INT4VectorSequence from LALDict.
+ */
+const INT4VectorSequence *XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params)
+{
+	/* Default is NULL */
+	const INT4VectorSequence *value = NULL;
+	if (params && XLALDictContains(params, "ModeArray"))
+		value = XLALDictLookupINT4VectorSequence(params, "ModeArray");
+	return value;
+}
+
 DEFINE_LOOKUP_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_LOOKUP_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_LOOKUP_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -220,6 +240,15 @@ DEFINE_ISDEFAULT_FUNC(Sideband, INT4, "sideband", 0)
 DEFINE_ISDEFAULT_FUNC(NumRelData, String, "numreldata", NULL)
 
 DEFINE_ISDEFAULT_FUNC(Lmax, INT4, "Lmax", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
+
+/**
+ * Check if ModeArray of LAL data type INT4VectorSequence is default in LALDict
+ */
+int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params)
+{
+	/* Default is NULL */
+	return XLALSimInspiralWaveformParamsLookupModeArray(params) == NULL;
+}
 
 DEFINE_ISDEFAULT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_ISDEFAULT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)

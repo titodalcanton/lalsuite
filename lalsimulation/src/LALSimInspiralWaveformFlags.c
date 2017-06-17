@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Evan Ochsner
+/* Copyright (C) 2012 Evan Ochsner, 2017 Sebastian Khan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -292,7 +292,7 @@ bool XLALSimInspiralFrameAxisIsDefault(
 {
     if( axisChoice == LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT )
         return true;
-    else 
+    else
         return false;
 }
 
@@ -332,7 +332,7 @@ bool XLALSimInspiralModesChoiceIsDefault(
 {
     if( modesChoice == LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT )
         return true;
-    else 
+    else
         return false;
 }
 
@@ -369,6 +369,221 @@ char* XLALSimInspiralGetNumrelDataOLD(
     {
         return NULL;
     }
+}
+
+
+/**
+ * Returns a INT4VectorSequence pointer.
+ * With length = (LAL_SIM_INSPIRAL_LMAX - LAL_SIM_INSPIRAL_LMIN) + 1
+ * and vectorLength = 2*LAL_SIM_INSPIRAL_LMAX + 1.
+ * length is the total number of ell spherical harmonic modes
+ * vectorLength is the largest number of m modes of the largest ell mode
+ * considered.
+ * The largest ell mode is given by LAL_SIM_INSPIRAL_LMAX.
+ * This returned 'ModeArray' is used in lalsimulation to
+ * identify which spherical harmonic multipoles should be used
+ * when generating a waveform.
+ * The following convention is adopted for the entires of ModeArray
+ * value = 1 means mode on
+ * value = 0 means mode off
+ * value = -1 means 'm' mode does not exist for this ell mode.
+ * This function returns a 'ModeArray' filled with 0's for valid
+ * entries and with -1's for invalid/unphysical entires.
+ */
+INT4VectorSequence * XLALSimInspiralCreateModeArray(void)
+{
+     /* num_l_modes: counts the number spherical harmonic ell modes from LAL_SIM_INSPIRAL_LMIN to LAL_SIM_INSPIRAL_LMAX (inclusive)*/
+    int num_l_modes = (LAL_SIM_INSPIRAL_LMAX - LAL_SIM_INSPIRAL_LMIN) + 1;
+    /* max_num_m_modes: the largest number of spherical harmonics m modes of the highest ell mode (LAL_SIM_INSPIRAL_LMAX) */
+    int max_num_m_modes = 2*LAL_SIM_INSPIRAL_LMAX + 1;
+    /* initialize ModeArray */
+    INT4VectorSequence* ModeArray = XLALCreateINT4VectorSequence(num_l_modes, max_num_m_modes);
+
+    /*  fill array with zeros for valid entry points */
+    /*  and with -1 for invalid points */
+
+     /* initialize */
+    int ell = 0;
+    int m = 0;
+    int one_dim_array_index = 0;
+    /* loop over all ModeArray entries */
+    for (int ell_index=0; ell_index<num_l_modes; ell_index++){
+        ell = ell_index + 2; /* because the lowest ell mode we consider is ell=2 and the array index starts counting from 0 we convert from the ell array index to actual ell. */
+        for (int m_mode_index=0; m_mode_index<max_num_m_modes; m_mode_index++){
+            m = XLALSimInspiralModeArrayConvertIndexToM(ell, m_mode_index);
+            one_dim_array_index = XLALSimInspiralModeArrayConvertModeToIndex(ell, m); /* Convert to 1D array index */
+            /* if m mode is unphsical, i.e. > 2*ell + 1 then set it to -1. Else set it to 0. */
+            if (m_mode_index >= XLALSimInspiralModeArrayLastIndexForL(ell)) {
+                ModeArray->data[one_dim_array_index] = -1;
+            } else {
+                ModeArray->data[one_dim_array_index] = 0;
+            }
+        }
+    }
+    return ModeArray;
+}
+
+
+/**
+ * Input:
+ * ell: spherical harmonic ell mode
+ * m: spherical harmonic m mode
+ * into the one-dimensional array index.
+ */
+int XLALSimInspiralModeArrayConvertModeToIndex(int ell, int m)
+{
+    int ell_index = ell - 2;
+    /* max_num_m_modes: the largest number of spherical harmonics m modes of the highest ell mode (LAL_SIM_INSPIRAL_LMAX) */
+    int max_num_m_modes = 2*LAL_SIM_INSPIRAL_LMAX + 1;
+
+    int m_index = XLALSimInspiralModeArrayConvertMToIndex(ell, m);
+
+    return ell_index*max_num_m_modes + m_index;
+}
+
+/**
+ * Converts the m spherical harmonic to it's corresponding array index.
+ */
+int XLALSimInspiralModeArrayConvertMToIndex(int ell, int m)
+{
+    return ell + m;
+}
+
+/**
+ * Converts the m spherical harmonic array index to it's corresponding physical m-mode value.
+ */
+int XLALSimInspiralModeArrayConvertIndexToM(int ell, int index)
+{
+    return index - ell;
+}
+
+/**
+ * Returns the array index of the highest m-mode
+ * for a given ell spherical harmonic.
+ * The last index is (2*ell + 1).
+ * This is used to avoid unessessary looping over
+ * m modes that are unphysical.
+ */
+int XLALSimInspiralModeArrayLastIndexForL(int ell)
+{
+    return 2*ell + 1;
+}
+
+/**
+ * Check if the given ell, m spherical harmonic mode is active in ModeArray.
+ * Returns 1 if active
+ * Returns 0 if inactive.
+ */
+int XLALSimInspiralModeArrayIsModeActive(INT4VectorSequence *ModeArray, int ell, int m)
+{
+    int ret = 0;
+    int one_dim_array_index = XLALSimInspiralModeArrayConvertModeToIndex(ell, m); /* Convert to 1D array index */
+    if (ModeArray->data[one_dim_array_index] == 1) {
+        ret = 1;
+    }
+
+    return ret;
+}
+
+/**
+ * add all m modes at given ell to ModeArray
+ */
+int XLALSimInspiralModeArrayAddAllModesAtL(INT4VectorSequence *ModeArray, int ell)
+{
+
+    XLAL_CHECK(!(ell>8), XLAL_EDOM, "ell index is out of range. Currently only ell <= %i supported\n", LAL_SIM_INSPIRAL_LMAX);
+    XLAL_CHECK(!(ell<2), XLAL_EDOM, "ell index is out of range. ell must start at %i\n", LAL_SIM_INSPIRAL_LMIN);
+
+    int one_dim_array_index = 0;
+
+    //to add all at input ell
+    for (int m=-ell; m<=ell; m++){
+        one_dim_array_index = XLALSimInspiralModeArrayConvertModeToIndex(ell, m); /* Convert to 1D array index */
+        ModeArray->data[one_dim_array_index] = 1;
+    }
+
+    return XLAL_SUCCESS;
+}
+
+/**
+ * remove all m modes at given ell from ModeArray
+ */
+int XLALSimInspiralModeArrayRemoveAllModesAtL(INT4VectorSequence *ModeArray, int ell)
+{
+
+    XLAL_CHECK(!(ell>8), XLAL_EDOM, "ell index is out of range. Currently only ell <= %i supported\n", LAL_SIM_INSPIRAL_LMAX);
+    XLAL_CHECK(!(ell<2), XLAL_EDOM, "ell index is out of range. ell must start at %i\n", LAL_SIM_INSPIRAL_LMIN);
+
+    int one_dim_array_index = 0;
+
+    //to add all at input ell
+    for (int m=-ell; m<=ell; m++){
+        one_dim_array_index = XLALSimInspiralModeArrayConvertModeToIndex(ell, m); /* Convert to 1D array index */
+        ModeArray->data[one_dim_array_index] = 0;
+    }
+
+    return XLAL_SUCCESS;
+}
+
+/**
+ * add ell and m mode to ModeArray
+ */
+int XLALSimInspiralModeArrayAddMode(INT4VectorSequence *ModeArray, int ell, int m)
+{
+
+    XLAL_CHECK(!(ell>8), XLAL_EDOM, "ell index is out of range. Currently only ell <= %i supported\n", LAL_SIM_INSPIRAL_LMAX);
+    XLAL_CHECK(!(ell<2), XLAL_EDOM, "ell index is out of range. ell must start at %i\n", LAL_SIM_INSPIRAL_LMIN);
+    XLAL_CHECK(!(m>ell), XLAL_EDOM, "m index is out of range. m index must run from -ell to ell\n");
+    XLAL_CHECK(!(m<-ell), XLAL_EDOM, "m index is out of range. m index must run from -ell to ell\n");
+
+    int one_dim_array_index = XLALSimInspiralModeArrayConvertModeToIndex(ell, m); /* Convert to 1D array index */
+
+    ModeArray->data[one_dim_array_index] = 1;
+    return XLAL_SUCCESS;
+}
+
+/**
+ * remove ell and m mode from ModeArray
+ */
+int XLALSimInspiralModeArrayRemoveMode(INT4VectorSequence *ModeArray, int ell, int m)
+{
+    XLAL_CHECK(!(ell>8), XLAL_EDOM, "ell index is out of range. Currently only ell <= %i supported\n", LAL_SIM_INSPIRAL_LMAX);
+    XLAL_CHECK(!(ell<2), XLAL_EDOM, "ell index is out of range. ell must start at %i\n", LAL_SIM_INSPIRAL_LMIN);
+    XLAL_CHECK(!(m>ell), XLAL_EDOM, "m index is out of range. m index must run from -ell to ell\n");
+    XLAL_CHECK(!(m<-ell), XLAL_EDOM, "m index is out of range. m index must run from -ell to ell\n");
+
+    int one_dim_array_index = XLALSimInspiralModeArrayConvertModeToIndex(ell, m); /* Convert to 1D array index */
+
+    ModeArray->data[one_dim_array_index] = 0;
+    return XLAL_SUCCESS;
+}
+
+/**
+ * Use a set of predetermined options to add gravitational wave
+ * spin weighted spherical modes to ModeArray.
+ * Update me with more options.
+ * The LALSimulation struct LALSimInspiralModesChoice is used.
+ */
+int XLALSimInspiralModeArraySetupPresets(INT4VectorSequence *ModeArray, LALSimInspiralModesChoice ModesChoice)
+{
+
+    switch ( ModesChoice ) {
+        case LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED: //2-2 and 22 (also called LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT)
+            //NOTE: To use this in python you have to call it LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED ... Don't know why
+            XLALSimInspiralModeArrayAddMode(ModeArray, 2,-2);
+            XLALSimInspiralModeArrayAddMode(ModeArray, 2,2);
+            break;
+        case LAL_SIM_INSPIRAL_MODES_CHOICE_ALL:
+            for (int ell=2; ell<=LAL_SIM_INSPIRAL_LMAX; ell++){
+                XLALSimInspiralModeArrayAddAllModesAtL(ModeArray, ell);
+            }
+            break;
+        default:
+            XLALPrintError("Unknown value for ModesChoice\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return XLAL_SUCCESS;
 }
 
 /** @} */
